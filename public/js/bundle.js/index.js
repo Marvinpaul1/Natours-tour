@@ -784,7 +784,6 @@ if (bookBtn) bookBtn.addEventListener('click', (e)=>{
     (0, _paystack.bookTour)(tourId);
 });
 if (reviewForm) reviewForm.addEventListener('submit', async (e)=>{
-    console.log('Submit Fired');
     e.preventDefault();
     const tourId = reviewForm.dataset.tourId;
     const review = document.getElementById('review-text').value;
@@ -795,11 +794,6 @@ if (reviewForm) reviewForm.addEventListener('submit', async (e)=>{
         (0, _alert.showAlert)('error', 'Please select a start rating!');
         return;
     }
-    console.log('Submitting:', {
-        tourId,
-        review,
-        rating
-    });
     await (0, _review.createReview)(tourId, review, rating);
 });
 
@@ -6440,11 +6434,6 @@ var _axios = require("axios");
 var _axiosDefault = parcelHelpers.interopDefault(_axios);
 var _alert = require("./alert");
 const createReview = async (tourId, review, rating)=>{
-    console.log('createReview:', {
-        tourId,
-        review,
-        rating
-    });
     try {
         const res = await (0, _axiosDefault.default)({
             method: 'POST',

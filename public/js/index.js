@@ -96,7 +96,6 @@ if (bookBtn) {
 
 if (reviewForm) {
   reviewForm.addEventListener('submit', async (e) => {
-    console.log('Submit Fired');
     e.preventDefault();
     const tourId = reviewForm.dataset.tourId;
     const review = document.getElementById('review-text').value;
@@ -110,7 +109,6 @@ if (reviewForm) {
       showAlert('error', 'Please select a start rating!');
       return;
     }
-    console.log('Submitting:', { tourId, review, rating });
     await createReview(tourId, review, rating);
   });
 }

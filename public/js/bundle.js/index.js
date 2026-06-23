@@ -781,30 +781,27 @@ if (bookBtn) bookBtn.addEventListener('click', (e)=>{
     e.target.texContent = 'Processing....';
     const button = e.target.closest('#book-tour');
     const { tourId } = button.dataset;
-    console.log('Tour ID found:', tourId);
     (0, _paystack.bookTour)(tourId);
 });
-if (reviewForm) {
-    console.log('Review Form found');
-    reviewForm.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        const tourId = reviewForm.dataset.tourId;
-        const review = document.getElementById('review-text').value;
-        const checkedRating = document.querySelector('input[name="rating"]:checked');
-        console.log(tourId, review);
-        if (!checkedRating) {
-            (0, _alert.showAlert)('Please select a start rating!');
-            return;
-        }
-        const rating = checkedRating.value;
-        console.log('Submitting:', {
-            tourId,
-            review,
-            rating
-        });
-        await (0, _review.createReview)(tourId, review, rating);
+if (reviewForm) reviewForm.addEventListener('submit', async (e)=>{
+    console.log('Submit Fired');
+    e.preventDefault();
+    const tourId = reviewForm.dataset.tourId;
+    const review = document.getElementById('review-text').value;
+    const checkedRating = document.querySelector('input[name="rating"]:checked');
+    // const convertRating = Number(checkedRating);
+    const rating = checkedRating ? checkedRating.value : null;
+    if (!rating) {
+        (0, _alert.showAlert)('error', 'Please select a start rating!');
+        return;
+    }
+    console.log('Submitting:', {
+        tourId,
+        review,
+        rating
     });
-}
+    await (0, _review.createReview)(tourId, review, rating);
+});
 
 },{"./mapbox":"3zDlz","./login":"7yHem","./signup":"fNY2o","./updateSettings":"l3cGY","./paystack":"f0HGt","./review":"9Gbth","./alert":"kxdiQ"}],"3zDlz":[function(require,module,exports,__globalThis) {
 /* eslint-disable */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -6443,10 +6440,15 @@ var _axios = require("axios");
 var _axiosDefault = parcelHelpers.interopDefault(_axios);
 var _alert = require("./alert");
 const createReview = async (tourId, review, rating)=>{
+    console.log('createReview:', {
+        tourId,
+        review,
+        rating
+    });
     try {
         const res = await (0, _axiosDefault.default)({
             method: 'POST',
-            url: `/api/v1/${tourId}/reviews`,
+            url: `/api/v1/tours/${tourId}/reviews`,
             data: {
                 review,
                 rating

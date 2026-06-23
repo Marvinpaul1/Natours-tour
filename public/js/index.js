@@ -90,26 +90,26 @@ if (bookBtn) {
     e.target.texContent = 'Processing....';
     const button = e.target.closest('#book-tour');
     const { tourId } = button.dataset;
-    console.log('Tour ID found:', tourId);
     bookTour(tourId);
   });
 }
 
 if (reviewForm) {
-  console.log('Review Form found');
   reviewForm.addEventListener('submit', async (e) => {
+    console.log('Submit Fired');
     e.preventDefault();
     const tourId = reviewForm.dataset.tourId;
     const review = document.getElementById('review-text').value;
     const checkedRating = document.querySelector(
       'input[name="rating"]:checked',
     );
-    console.log(tourId, review);
-    if (!checkedRating) {
-      showAlert('Please select a start rating!');
+    // const convertRating = Number(checkedRating);
+    const rating = checkedRating ? checkedRating.value : null;
+
+    if (!rating) {
+      showAlert('error', 'Please select a start rating!');
       return;
     }
-    const rating = checkedRating.value;
     console.log('Submitting:', { tourId, review, rating });
     await createReview(tourId, review, rating);
   });

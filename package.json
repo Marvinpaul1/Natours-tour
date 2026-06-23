@@ -4,7 +4,6 @@
   "description": "Learning node, express and MongoDB",
   "license": "ISC",
   "author": "Marvin",
-  "type": "commonjs",
   "scripts": {
     "start": "nodemon server.js",
     "start:prod": "cross-env NODE_ENV=production nodemon server.js",

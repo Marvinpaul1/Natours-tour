@@ -83,19 +83,10 @@ exports.getMyTours = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getReviewForm = catchAsync(async (req, res, next) => {
-  res.status(200).render('createReview', {
-    title: 'Tell us your experience about the tour',
-  });
-});
-
 exports.getMyReviews = catchAsync(async (req, res, next) => {
-  const bookings = await Booking.find({ user: req.user.id });
+  const reviews = await Review.find({ user: req.user.id });
 
-  const reviewId = bookings.map((el) => el.review);
-  const reviews = await Review.find({ _id: { $in: reviewId } });
-
-  res.status(200).render('overview', {
+  res.status(200).render('myReview', {
     title: 'My Reviews',
     reviews,
   });

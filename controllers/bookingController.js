@@ -6,10 +6,8 @@ const factory = require('./handlerFactory');
 
 exports.getCheckoutSession = catchAsync(async (req, res, next) => {
   const paystack = paystack_api(process.env.PAYSTACK_SECRET_KEY);
-  console.log('paystack key:', process.env.PAYSTACK_SECRET_KEY);
   // 1) Get the currently booked tour
   const tour = await Tour.findById(req.params.tourId);
-  // console.log('Tour found:', tour);
   // 2) Initialize a Paystack transaction
   // Note: Paystack accepts amounts in lowest currency unit (e.g., Kobo for NGN, Pesewas for GHS)
 
@@ -37,7 +35,6 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
       ],
     },
   });
-  console.log(transaction);
   // 3) Send session/transaction data back to client
   res.status(200).json({
     status: 'success',

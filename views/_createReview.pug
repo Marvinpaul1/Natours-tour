@@ -1,0 +1,19 @@
+mixin createReview(review)
+
+  .cta 
+    h2.heading-secondary.ma-bt-lg Leave a review.  
+    form.form.form--review(data-tour-id=`${tour.id}`)
+      .form__group 
+        label.form__label(for='review-text') Your review 
+        textarea#review-text.form__input(placeholder="Tell us about your experience...", rows='4') 
+      .form__group 
+        label.form__label(for='reivew-rating')
+        .star-rating-input
+          each star in [5, 4, 3, 2, 1]
+            input.star-radio-input(type='radio', id=`star-${star}`, name='rating', value=star, required)
+            label(for=`star-${star}`).star-label
+              svg.reviews__star 
+                use(xlink:href='/img/icons.svg#icon-star')
+      .form__group  
+        button.btn.btn--green Submit 
+    

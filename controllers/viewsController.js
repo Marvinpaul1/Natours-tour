@@ -1,5 +1,6 @@
 const Tour = require('../models/tourModel');
 const User = require('../models/userModel');
+const Review = require('../models/reviewModel');
 const Booking = require('../models/bookingModel');
 const AppError = require('../utils/appErr');
 const catchAsync = require('../utils/catchAsync');
@@ -28,12 +29,24 @@ exports.getTour = catchAsync(async (req, res, next) => {
     return next(new AppError('There is no tour with that name', 404));
   }
 
-  // 2) Build template
+  // 2) Checking if the user is logged in and has bokked tour
+  let isBooked = false;
+
+  // 3) Checking both res.local.user and req.user
+  const currentUser = res.locals.user || req.user;
+  if (currentUser) {
+    const booking = await Booking.findOne({
+      user: currentUser._id,
+      tour: tour._id,
+    });
+    if (booking) isBooked = true;
+  }
 
   // 3) Render template using data from step 1).
   res.status(200).render('tour', {
     title: `${tour.name} Tour`,
     tour,
+    isBooked,
   });
 });
 
@@ -67,6 +80,24 @@ exports.getMyTours = catchAsync(async (req, res, next) => {
   res.status(200).render('overview', {
     title: 'My Tours',
     tours,
+  });
+});
+
+exports.getReviewForm = catchAsync(async (req, res, next) => {
+  res.status(200).render('createReview', {
+    title: 'Tell us your experience about the tour',
+  });
+});
+
+exports.getMyReviews = catchAsync(async (req, res, next) => {
+  const bookings = await Booking.find({ user: req.user.id });
+
+  const reviewId = bookings.map((el) => el.review);
+  const reviews = await Review.find({ _id: { $in: reviewId } });
+
+  res.status(200).render('overview', {
+    title: 'My Reviews',
+    reviews,
   });
 });
 

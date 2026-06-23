@@ -720,6 +720,8 @@ var _login = require("./login");
 var _signup = require("./signup");
 var _updateSettings = require("./updateSettings");
 var _paystack = require("./paystack");
+var _review = require("./review");
+var _alert = require("./alert");
 // DOM ELEMENTS
 const mapBox = document.getElementById('map');
 const loginForm = document.querySelector('.form--login');
@@ -728,6 +730,7 @@ const logOutBtn = document.querySelector('.nav__el--logout');
 const userDataForm = document.querySelector('.form-user-data');
 const userPasswordForm = document.querySelector('.form-user-password');
 const bookBtn = document.getElementById('book-tour');
+const reviewForm = document.querySelector('.form--review');
 // DELEGATION
 if (mapBox) {
     const locations = JSON.parse(mapBox.dataset.locations);
@@ -735,26 +738,20 @@ if (mapBox) {
     if (typeof L !== 'undefined') (0, _mapbox.displayMap)(locations);
     else console.log('Leaflet library failed to load from CDN');
 }
-if (loginForm) {
-    console.log('Form found!');
-    loginForm.addEventListener('submit', (e)=>{
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        (0, _login.login)(email, password);
-    });
-}
-if (signupForm) {
-    console.log('Form found!');
-    signupForm.addEventListener('submit', (e)=>{
-        e.preventDefault();
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const passwordConfirm = document.getElementById('password-confirm').value;
-        (0, _signup.signup)(name, email, password, passwordConfirm);
-    });
-}
+if (loginForm) loginForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    (0, _login.login)(email, password);
+});
+if (signupForm) signupForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const passwordConfirm = document.getElementById('password-confirm').value;
+    (0, _signup.signup)(name, email, password, passwordConfirm);
+});
 if (logOutBtn) logOutBtn.addEventListener('click', (0, _login.logout));
 if (userDataForm) userDataForm.addEventListener('submit', (e)=>{
     e.preventDefault();
@@ -787,8 +784,29 @@ if (bookBtn) bookBtn.addEventListener('click', (e)=>{
     console.log('Tour ID found:', tourId);
     (0, _paystack.bookTour)(tourId);
 });
+if (reviewForm) {
+    console.log('Review Form found');
+    reviewForm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const tourId = reviewForm.dataset.tourId;
+        const review = document.getElementById('review-text').value;
+        const checkedRating = document.querySelector('input[name="rating"]:checked');
+        console.log(tourId, review);
+        if (!checkedRating) {
+            (0, _alert.showAlert)('Please select a start rating!');
+            return;
+        }
+        const rating = checkedRating.value;
+        console.log('Submitting:', {
+            tourId,
+            review,
+            rating
+        });
+        await (0, _review.createReview)(tourId, review, rating);
+    });
+}
 
-},{"./mapbox":"3zDlz","./login":"7yHem","./signup":"fNY2o","./updateSettings":"l3cGY","./paystack":"f0HGt"}],"3zDlz":[function(require,module,exports,__globalThis) {
+},{"./mapbox":"3zDlz","./login":"7yHem","./signup":"fNY2o","./updateSettings":"l3cGY","./paystack":"f0HGt","./review":"9Gbth","./alert":"kxdiQ"}],"3zDlz":[function(require,module,exports,__globalThis) {
 /* eslint-disable */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "displayMap", ()=>displayMap);
@@ -877,7 +895,7 @@ const login = async (email, password)=>{
     try {
         const res = await (0, _axiosDefault.default)({
             method: 'POST',
-            url: 'http://127.0.0.1:8000/api/v1/users/login',
+            url: '/api/v1/users/login',
             data: {
                 email,
                 password
@@ -890,7 +908,7 @@ const login = async (email, password)=>{
             }, 1500);
         }
     } catch (error) {
-        s;
+        (0, _alert.showAlert)('error', 'Error login out! Try again.');
     }
 };
 const logout = async ()=>{
@@ -6351,7 +6369,6 @@ var _axios = require("axios");
 var _axiosDefault = parcelHelpers.interopDefault(_axios);
 var _alert = require("./alert");
 const signup = async (name, email, password, passwordConfirm)=>{
-    console.log('SingUp Form');
     try {
         const res = await (0, _axiosDefault.default)({
             method: 'POST',
@@ -6371,7 +6388,6 @@ const signup = async (name, email, password, passwordConfirm)=>{
         }
     } catch (err) {
         (0, _alert.showAlert)('error', err.response.data.message);
-        console.log(err.message);
     }
 };
 
@@ -6384,7 +6400,7 @@ var _axiosDefault = parcelHelpers.interopDefault(_axios);
 var _alert = require("./alert");
 const updateSettings = async (data, type)=>{
     try {
-        const url = type === 'password' ? 'http://127.0.0.1:8000/api/v1/users/updateMyPassword' : 'http://127.0.0.1:8000/api/v1/users/updateMe';
+        const url = type === 'password' ? '/api/v1/users/updateMyPassword' : '/api/v1/users/updateMe';
         const res = await (0, _axiosDefault.default)({
             method: 'PATCH',
             url,
@@ -6416,6 +6432,34 @@ const bookTour = async (tourId)=>{
     } catch (err) {
         console.log(err);
         (0, _alert.showAlert)('error', err.response?.data?.message || 'Something went wrong please try again');
+    }
+};
+
+},{"axios":"jo6P5","./alert":"kxdiQ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9Gbth":[function(require,module,exports,__globalThis) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "createReview", ()=>createReview);
+var _axios = require("axios");
+var _axiosDefault = parcelHelpers.interopDefault(_axios);
+var _alert = require("./alert");
+const createReview = async (tourId, review, rating)=>{
+    try {
+        const res = await (0, _axiosDefault.default)({
+            method: 'POST',
+            url: `/api/v1/${tourId}/reviews`,
+            data: {
+                review,
+                rating
+            }
+        });
+        if (res.data.status === 'success') {
+            (0, _alert.showAlert)('success', 'Review submitted successfully');
+            window.setTimeout(()=>{
+                location.reload(true);
+            }, 1500);
+        }
+    } catch (error) {
+        (0, _alert.showAlert)('error', 'Error login! Try again.');
     }
 };
 

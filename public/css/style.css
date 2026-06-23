@@ -1322,3 +1322,30 @@ body {
   -webkit-transform: translateY(-2px);
   transform: translateY(-2px);
 }
+
+.star-radio-input {
+  display: none;
+}
+
+.star-rating-input {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.star-label {
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.star-label svg {
+  width: 24px;
+  height: 24px;
+  fill: #bbb;
+}
+
+.star-radio-input:checked ~ .star-label svg,
+.star-label:hover svg,
+.star-label:hover ~ .star-label svg {
+  fill: #55c57a;
+}

@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const Tour = require('./tourModel');
+const Booking = require('./bookingModel');
+const AppError = require('../utils/appErr');
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -96,6 +98,19 @@ reviewSchema.post(/^findOneAnd/, async function () {
   // await this.findOne(); does not work here, query has already been executed
   await this.r.constructor.calAverageRatings(this.r.tour);
 });
+
+// reviewSchema.pre('save', async function () {
+//   const booking = await Booking.findOne({
+//     user: this.user,
+//     tour: this.tour,
+//   });
+
+//   if (!booking) {
+//     throw new AppError(
+//       'You can only review a tour you have booked and purchased',
+//     );
+//   }
+// });
 
 const Review = mongoose.model('Review', reviewSchema);
 

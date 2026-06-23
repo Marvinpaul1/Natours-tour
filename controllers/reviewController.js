@@ -1,7 +1,9 @@
+const { async } = require('regenerator-runtime');
 const Review = require('../models/reviewModel');
 const AppError = require('../utils/appErr');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handlerFactory');
+const Booking = require('../models/bookingModel');
 
 // exports.getAllReview = catchAsync(async (req, res, next) => {
 //   let filter = {};
@@ -26,6 +28,7 @@ exports.setTourUserIds = (req, res, next) => {
   // Allow nested routes
   if (!req.body.tour) req.body.tour = req.params.tourId;
   if (!req.body.user) req.body.user = req.user.id;
+  if (req.body.tourId && !req.body.tour) req.body.tour = req.body.tourId;
   next();
 };
 

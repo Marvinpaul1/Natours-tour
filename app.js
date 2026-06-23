@@ -8,6 +8,7 @@ const mongoSanitize = require('mongo-sanitize');
 const xss = require('xss');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 
 const AppError = require('./utils/appErr');
 const globalErrorHandler = require('./controllers/errController');
@@ -103,10 +104,12 @@ app.use(
   }),
 );
 
+app.use(compression());
+
 // Test middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  // console.log(req.cookies);
+
   next();
 });
 

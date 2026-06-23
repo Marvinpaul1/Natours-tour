@@ -1,5 +1,6 @@
 extends base 
 include _reviewCard
+include _createReview
 
 block append head
     link(rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=' crossorigin='')
@@ -72,9 +73,14 @@ block content
         #map(data-locations=`${JSON.stringify(tour.locations)}`)
 
     section.section-reviews
-        .reviews
+        .reviews 
             each review in tour.reviews 
                 +reviewCard(review)
+        if isBooked
+            +createReview()
+        else 
+            .cta 
+                h2.heading-secondary Buy this tour to read or write review!
             
     section.section-cta
         .cta

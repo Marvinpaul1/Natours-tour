@@ -1,6 +1,6 @@
 /* eslint-disable */
 // import '@babel/polyfill';
-import { displayMap } from './mapbox';
+import { displayMap } from './mapBox';
 import { login, logout } from './login';
 import { signup } from './signup';
 import { updateSettings } from './updateSettings';
@@ -17,6 +17,8 @@ const userDataForm = document.querySelector('.form-user-data');
 const userPasswordForm = document.querySelector('.form-user-password');
 const bookBtn = document.getElementById('book-tour');
 const reviewForm = document.querySelector('.form--review');
+const mobileNavBtn = document.querySelector('.mobile-nav-btn');
+const mobileNav = document.querySelector('.user-view__menu');
 
 // DELEGATION
 if (mapBox) {
@@ -103,12 +105,18 @@ if (reviewForm) {
       'input[name="rating"]:checked',
     );
     // const convertRating = Number(checkedRating);
-    const rating = checkedRating ? checkedRating.value : null;
+    const rating = checkedRating ? Number(checkedRating.value) : null;
 
     if (!rating) {
       showAlert('error', 'Please select a start rating!');
       return;
     }
     await createReview(tourId, review, rating);
+  });
+}
+
+if (mobileNavBtn) {
+  mobileNavBtn.addEventListener('click', function () {
+    mobileNav.classList.toggle('open');
   });
 }

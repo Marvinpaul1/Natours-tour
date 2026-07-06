@@ -34,7 +34,12 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", ' https://unpkg.com'],
-        styleSrc: ["'self'", "'unsafe-inline'", ' https://unpkg.com'],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          ' https://unpkg.com',
+          'https://fonts.googleapis.com',
+        ],
         // This line allow the parcel webs0cket connection
         connectSrc: [
           "'self'",
@@ -49,6 +54,7 @@ app.use(
           'https://unpkg.com',
           'https://*.openstreetmap.org',
         ],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
 
         // This line stops Helmet from forcing Http to Https locally
         upgradeInsecureRequests: null,

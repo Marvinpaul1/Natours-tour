@@ -77,9 +77,9 @@ block content
             each review in tour.reviews 
                 +reviewCard(review)
         if isBooked
-            +createReview()
+            +createReview(tour)
         else 
-            .cta 
+            .review-buy  
                 h2.heading-secondary Buy this tour to read or write review!
             
     section.section-cta

@@ -10,6 +10,10 @@ mixin navItem(link, text, icon, active)
 block content 
   main.main
     .user-view
+      button.mobile-nav-btn  
+        svg   
+          use(xlink:href='/img/icons.svg#icon-menu')
+      nav.user-view__menu
       nav.user-view__menu
         ul.side-nav
           +navItem('#', 'Settings', 'settings', true)

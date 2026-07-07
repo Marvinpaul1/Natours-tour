@@ -626,6 +626,9 @@ body {
   height: 65rem;
   margin-top: calc(0px - var(--section-rotate));
 }
+@media screen and (max-width: 42rem) {
+  height: 20rem;
+}
 
 #map {
   position: absolute;

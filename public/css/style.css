@@ -657,7 +657,7 @@ body {
 
 @media screen and (max-width: 42rem) {
   .section-map {
-    height: 25rem;
+    height: 40rem;
   }
   .marker {
     width: 10rem;

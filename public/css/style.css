@@ -626,9 +626,6 @@ body {
   height: 65rem;
   margin-top: calc(0px - var(--section-rotate));
 }
-@media screen and (max-width: 42rem) {
-  height: 20rem;
-}
 
 #map {
   position: absolute;
@@ -660,7 +657,7 @@ body {
 
 @media screen and (max-width: 42rem) {
   .section-map {
-    height: 50rem;
+    height: 20rem;
   }
   .marker {
     width: 10rem;

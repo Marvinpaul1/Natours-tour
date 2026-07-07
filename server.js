@@ -13,16 +13,20 @@ process.on('uncaughtException', (err) => {
 const app = require('./app');
 app.set('query parser', 'extended');
 
-// const DB = process.env.DATABASE.replace(
-//   '<PASSWORD>',
-//   process.env.DATABASE_PASSWORD,
-// );
+const DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD,
+);
 
-mongoose.connect(process.env.DATABASE_LOCAL).then(() => {
-  // (DB).then(() => {
+mongoose.connect(DB).then(() => {
   console.log('DB connections successful');
 });
-const port = process.env.PORT || 3000;
+
+// mongoose.connect(process.env.DATABASE_LOCAL).then(() => {
+//   // (DB).then(() => {
+//   console.log('DB connections successful');
+// });
+const port = process.env.PORT || 8000;
 const server = app.listen(port, () => {
   console.log(`App running on ${port}...`);
 });

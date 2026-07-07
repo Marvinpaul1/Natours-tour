@@ -715,7 +715,7 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 
 },{}],"f2QDv":[function(require,module,exports,__globalThis) {
 /* eslint-disable */ // import '@babel/polyfill';
-var _mapbox = require("./mapbox");
+var _mapBox = require("./mapBox");
 var _login = require("./login");
 var _signup = require("./signup");
 var _updateSettings = require("./updateSettings");
@@ -731,11 +731,13 @@ const userDataForm = document.querySelector('.form-user-data');
 const userPasswordForm = document.querySelector('.form-user-password');
 const bookBtn = document.getElementById('book-tour');
 const reviewForm = document.querySelector('.form--review');
+const mobileNavBtn = document.querySelector('.mobile-nav-btn');
+const mobileNav = document.querySelector('.user-view__menu');
 // DELEGATION
 if (mapBox) {
     const locations = JSON.parse(mapBox.dataset.locations);
-    (0, _mapbox.displayMap)(locations);
-    if (typeof L !== 'undefined') (0, _mapbox.displayMap)(locations);
+    (0, _mapBox.displayMap)(locations);
+    if (typeof L !== 'undefined') (0, _mapBox.displayMap)(locations);
     else console.log('Leaflet library failed to load from CDN');
 }
 if (loginForm) loginForm.addEventListener('submit', (e)=>{
@@ -789,15 +791,18 @@ if (reviewForm) reviewForm.addEventListener('submit', async (e)=>{
     const review = document.getElementById('review-text').value;
     const checkedRating = document.querySelector('input[name="rating"]:checked');
     // const convertRating = Number(checkedRating);
-    const rating = checkedRating ? checkedRating.value : null;
+    const rating = checkedRating ? Number(checkedRating.value) : null;
     if (!rating) {
         (0, _alert.showAlert)('error', 'Please select a start rating!');
         return;
     }
     await (0, _review.createReview)(tourId, review, rating);
 });
+if (mobileNavBtn) mobileNavBtn.addEventListener('click', function() {
+    mobileNav.classList.toggle('open');
+});
 
-},{"./mapbox":"3zDlz","./login":"7yHem","./signup":"fNY2o","./updateSettings":"l3cGY","./paystack":"f0HGt","./review":"9Gbth","./alert":"kxdiQ"}],"3zDlz":[function(require,module,exports,__globalThis) {
+},{"./mapBox":"k6XpQ","./login":"7yHem","./signup":"fNY2o","./updateSettings":"l3cGY","./paystack":"f0HGt","./review":"9Gbth","./alert":"kxdiQ"}],"k6XpQ":[function(require,module,exports,__globalThis) {
 /* eslint-disable */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "displayMap", ()=>displayMap);
@@ -899,18 +904,18 @@ const login = async (email, password)=>{
             }, 1500);
         }
     } catch (error) {
-        (0, _alert.showAlert)('error', 'Error login out! Try again.');
+        (0, _alert.showAlert)('error', 'Error login in! Try again.');
     }
 };
 const logout = async ()=>{
     try {
         const res = await (0, _axiosDefault.default)({
             method: 'GET',
-            url: 'http://127.0.0.1:8000/api/v1/users/logout'
+            url: '/api/v1/users/logout'
         });
         // This line  reload the page manually
         res.data.status = 'success';
-        location.reload(true);
+        location.assign('/');
     } catch (err) {
         (0, _alert.showAlert)('error', 'Error login out! Try again.');
     }
@@ -1046,6 +1051,40 @@ var global = arguments[3];
 const { toString } = Object.prototype;
 const { getPrototypeOf } = Object;
 const { iterator, toStringTag } = Symbol;
+/* Creating a function that will check if an object has a property. */ const hasOwnProperty = (({ hasOwnProperty })=>(obj, prop)=>hasOwnProperty.call(obj, prop))(Object.prototype);
+/**
+ * Walk the prototype chain (excluding the shared Object.prototype) looking for
+ * an own `prop`. This distinguishes genuine own/inherited members — including
+ * class accessors and template prototypes — from members injected via
+ * Object.prototype pollution (e.g. `Object.prototype.username = '...'`), which
+ * live on Object.prototype itself and are therefore never matched.
+ *
+ * @param {*} thing The value whose chain to inspect
+ * @param {string|symbol} prop The property key to look for
+ *
+ * @returns {boolean} True when `prop` is owned below Object.prototype
+ */ const hasOwnInPrototypeChain = (thing, prop)=>{
+    let obj = thing;
+    const seen = [];
+    while(obj != null && obj !== Object.prototype){
+        if (seen.indexOf(obj) !== -1) return false;
+        seen.push(obj);
+        if (hasOwnProperty(obj, prop)) return true;
+        obj = getPrototypeOf(obj);
+    }
+    return false;
+};
+/**
+ * Read `obj[prop]` only when it is safe from Object.prototype pollution. Own
+ * properties and members inherited from a non-Object.prototype source (a class
+ * instance or template object) are honored; a value reachable only through a
+ * polluted Object.prototype is ignored and `undefined` is returned.
+ *
+ * @param {*} obj The source object
+ * @param {string|symbol} prop The property key to read
+ *
+ * @returns {*} The resolved value, or undefined when unsafe/absent
+ */ const getSafeProp = (obj, prop)=>obj != null && hasOwnInPrototypeChain(obj, prop) ? obj[prop] : undefined;
 const kindOf = ((cache)=>(thing)=>{
         const str = toString.call(thing);
         return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
@@ -1137,9 +1176,12 @@ const typeOfTest = (type)=>(thing)=>typeof thing === type;
  *
  * @returns {boolean} True if value is a plain Object, otherwise false
  */ const isPlainObject = (val)=>{
-    if (kindOf(val) !== 'object') return false;
+    if (!isObject(val)) return false;
     const prototype = getPrototypeOf(val);
-    return (prototype === null || prototype === Object.prototype || Object.getPrototypeOf(prototype) === null) && !(toStringTag in val) && !(iterator in val);
+    return (prototype === null || prototype === Object.prototype || getPrototypeOf(prototype) === null) && // Treat any genuine (non-Object.prototype-polluted) Symbol.toStringTag or
+    // Symbol.iterator as evidence the value is a tagged/iterable type rather
+    // than a plain object, while ignoring keys injected onto Object.prototype.
+    !hasOwnInPrototypeChain(val, toStringTag) && !hasOwnInPrototypeChain(val, iterator);
 };
 /**
  * Determine if a value is an empty object (safely handles Buffers)
@@ -1547,7 +1589,6 @@ const toCamelCase = (str)=>{
         return p1.toUpperCase() + p2;
     });
 };
-/* Creating a function that will check if an object has a property. */ const hasOwnProperty = (({ hasOwnProperty })=>(obj, prop)=>hasOwnProperty.call(obj, prop))(Object.prototype);
 const { propertyIsEnumerable } = Object.prototype;
 /**
  * Determine if a value is a RegExp object
@@ -1687,6 +1728,17 @@ const toFiniteNumber = (value, defaultValue)=>{
  */ const asap = typeof queueMicrotask !== 'undefined' ? queueMicrotask.bind(_global) : _setImmediate;
 // *********************
 const isIterable = (thing)=>thing != null && isFunction(thing[iterator]);
+/**
+ * Determine if a value is iterable via an iterator that is NOT sourced solely
+ * from a polluted Object.prototype. Use this instead of `isIterable` whenever
+ * the iterable comes from untrusted input (e.g. user-supplied header sources),
+ * so `Object.prototype[Symbol.iterator] = ...` cannot turn an ordinary object
+ * into an attacker-controlled entries iterator.
+ *
+ * @param {*} thing The value to test
+ *
+ * @returns {boolean} True if value has a non-polluted iterator
+ */ const isSafeIterable = (thing)=>thing != null && hasOwnInPrototypeChain(thing, iterator) && isIterable(thing);
 exports.default = {
     isArray,
     isArrayBuffer,
@@ -1731,6 +1783,8 @@ exports.default = {
     isHTMLForm,
     hasOwnProperty,
     hasOwnProp: hasOwnProperty,
+    hasOwnInPrototypeChain,
+    getSafeProp,
     reduceDescriptors,
     freezeMethods,
     toObjectSet,
@@ -1746,7 +1800,8 @@ exports.default = {
     isThenable,
     setImmediate: _setImmediate,
     asap,
-    isIterable
+    isIterable,
+    isSafeIterable
 };
 
 },{"./helpers/bind.js":"haRQb","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"haRQb":[function(require,module,exports,__globalThis) {
@@ -1845,7 +1900,8 @@ const validators = (0, _validatorJsDefault.default).validators;
             forcedJSONParsing: validators.transitional(validators.boolean),
             clarifyTimeoutError: validators.transitional(validators.boolean),
             legacyInterceptorReqResOrdering: validators.transitional(validators.boolean),
-            advertiseZstdAcceptEncoding: validators.transitional(validators.boolean)
+            advertiseZstdAcceptEncoding: validators.transitional(validators.boolean),
+            validateStatusUndefinedResolves: validators.transitional(validators.boolean)
         }, false);
         if (paramsSerializer != null) {
             if ((0, _utilsJsDefault.default).isFunction(paramsSerializer)) config.paramsSerializer = {
@@ -1935,7 +1991,7 @@ const validators = (0, _validatorJsDefault.default).validators;
     }
     getUri(config) {
         config = (0, _mergeConfigJsDefault.default)(this.defaults, config);
-        const fullPath = (0, _buildFullPathJsDefault.default)(config.baseURL, config.url, config.allowAbsoluteUrls);
+        const fullPath = (0, _buildFullPathJsDefault.default)(config.baseURL, config.url, config.allowAbsoluteUrls, config);
         return (0, _buildURLJsDefault.default)(fullPath, config.params, config.paramsSerializer);
     }
 }
@@ -1950,7 +2006,7 @@ const validators = (0, _validatorJsDefault.default).validators;
         return this.request((0, _mergeConfigJsDefault.default)(config || {}, {
             method,
             url,
-            data: (config || {}).data
+            data: config && (0, _utilsJsDefault.default).hasOwnProp(config, 'data') ? config.data : undefined
         }));
     };
 });
@@ -2001,11 +2057,15 @@ function encode(val) {
 }
 function buildURL(url, params, options) {
     if (!params) return url;
-    const _encode = options && options.encode || encode;
+    url = url || '';
     const _options = (0, _utilsJsDefault.default).isFunction(options) ? {
         serialize: options
     } : options;
-    const serializeFn = _options && _options.serialize;
+    // Read serializer options pollution-safely: own properties and methods on a
+    // class/template prototype are honored, but values injected onto a polluted
+    // Object.prototype are ignored.
+    const _encode = (0, _utilsJsDefault.default).getSafeProp(_options, 'encode') || encode;
+    const serializeFn = (0, _utilsJsDefault.default).getSafeProp(_options, 'serialize');
     let serializedParams;
     if (serializeFn) serializedParams = serializeFn(params, _options);
     else serializedParams = (0, _utilsJsDefault.default).isURLSearchParams(params) ? params.toString() : new (0, _axiosURLSearchParamsJsDefault.default)(params, _options).toString(_encode);
@@ -2062,9 +2122,7 @@ prototype.append = function append(name, value) {
     ]);
 };
 prototype.toString = function toString(encoder) {
-    const _encode = encoder ? function(value) {
-        return encoder.call(this, value, encode);
-    } : encode;
+    const _encode = encoder ? (value)=>encoder.call(this, value, encode) : encode;
     return this._pairs.map(function each(pair) {
         return _encode(pair[0]) + '=' + _encode(pair[1]);
     }, '').join('&');
@@ -2074,6 +2132,7 @@ exports.default = AxiosURLSearchParams;
 },{"./toFormData.js":"ajoez","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ajoez":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "DEFAULT_FORM_DATA_MAX_DEPTH", ()=>DEFAULT_FORM_DATA_MAX_DEPTH);
 var _utilsJs = require("../utils.js");
 var _utilsJsDefault = parcelHelpers.interopDefault(_utilsJs);
 var _axiosErrorJs = require("../core/AxiosError.js");
@@ -2083,6 +2142,7 @@ var _formDataJs = require("../platform/node/classes/FormData.js");
 var _formDataJsDefault = parcelHelpers.interopDefault(_formDataJs);
 var Buffer = require("adfd9b103875c2dd").Buffer;
 'use strict';
+const DEFAULT_FORM_DATA_MAX_DEPTH = 100;
 /**
  * Determines if the given thing is a array or js object.
  *
@@ -2168,18 +2228,37 @@ const predicates = (0, _utilsJsDefault.default).toFlatObject((0, _utilsJsDefault
     const dots = options.dots;
     const indexes = options.indexes;
     const _Blob = options.Blob || typeof Blob !== 'undefined' && Blob;
-    const maxDepth = options.maxDepth === undefined ? 100 : options.maxDepth;
+    const maxDepth = options.maxDepth === undefined ? DEFAULT_FORM_DATA_MAX_DEPTH : options.maxDepth;
     const useBlob = _Blob && (0, _utilsJsDefault.default).isSpecCompliantForm(formData);
+    const stack = [];
     if (!(0, _utilsJsDefault.default).isFunction(visitor)) throw new TypeError('visitor must be a function');
     function convertValue(value) {
         if (value === null) return '';
         if ((0, _utilsJsDefault.default).isDate(value)) return value.toISOString();
         if ((0, _utilsJsDefault.default).isBoolean(value)) return value.toString();
         if (!useBlob && (0, _utilsJsDefault.default).isBlob(value)) throw new (0, _axiosErrorJsDefault.default)('Blob is not supported. Use a Buffer instead.');
-        if ((0, _utilsJsDefault.default).isArrayBuffer(value) || (0, _utilsJsDefault.default).isTypedArray(value)) return useBlob && typeof Blob === 'function' ? new Blob([
-            value
-        ]) : Buffer.from(value);
+        if ((0, _utilsJsDefault.default).isArrayBuffer(value) || (0, _utilsJsDefault.default).isTypedArray(value)) {
+            if (useBlob && typeof _Blob === 'function') return new _Blob([
+                value
+            ]);
+            if (typeof Buffer !== 'undefined') return Buffer.from(value);
+            throw new (0, _axiosErrorJsDefault.default)('Blob is not supported. Use a Buffer instead.', (0, _axiosErrorJsDefault.default).ERR_NOT_SUPPORT);
+        }
         return value;
+    }
+    function throwIfMaxDepthExceeded(depth) {
+        if (depth > maxDepth) throw new (0, _axiosErrorJsDefault.default)('Object is too deeply nested (' + depth + ' levels). Max depth: ' + maxDepth, (0, _axiosErrorJsDefault.default).ERR_FORM_DATA_DEPTH_EXCEEDED);
+    }
+    function stringifyWithDepthLimit(value, depth) {
+        if (maxDepth === Infinity) return JSON.stringify(value);
+        const ancestors = [];
+        return JSON.stringify(value, function limitDepth(_key, currentValue) {
+            if (!(0, _utilsJsDefault.default).isObject(currentValue)) return currentValue;
+            while(ancestors.length && ancestors[ancestors.length - 1] !== this)ancestors.pop();
+            ancestors.push(currentValue);
+            throwIfMaxDepthExceeded(depth + ancestors.length - 1);
+            return currentValue;
+        });
     }
     /**
    * Default visitor.
@@ -2201,7 +2280,7 @@ const predicates = (0, _utilsJsDefault.default).toFlatObject((0, _utilsJsDefault
                 // eslint-disable-next-line no-param-reassign
                 key = metaTokens ? key : key.slice(0, -2);
                 // eslint-disable-next-line no-param-reassign
-                value = JSON.stringify(value);
+                value = stringifyWithDepthLimit(value, 1);
             } else if ((0, _utilsJsDefault.default).isArray(value) && isFlatArray(value) || ((0, _utilsJsDefault.default).isFileList(value) || (0, _utilsJsDefault.default).endsWith(key, '[]')) && (arr = (0, _utilsJsDefault.default).toArray(value))) {
                 // eslint-disable-next-line no-param-reassign
                 key = removeBrackets(key);
@@ -2218,7 +2297,6 @@ const predicates = (0, _utilsJsDefault.default).toFlatObject((0, _utilsJsDefault
         formData.append(renderKey(path, key, dots), convertValue(value));
         return false;
     }
-    const stack = [];
     const exposedHelpers = Object.assign(predicates, {
         defaultVisitor,
         convertValue,
@@ -2226,7 +2304,7 @@ const predicates = (0, _utilsJsDefault.default).toFlatObject((0, _utilsJsDefault
     });
     function build(value, path, depth = 0) {
         if ((0, _utilsJsDefault.default).isUndefined(value)) return;
-        if (depth > maxDepth) throw new (0, _axiosErrorJsDefault.default)('Object is too deeply nested (' + depth + ' levels). Max depth: ' + maxDepth, (0, _axiosErrorJsDefault.default).ERR_FORM_DATA_DEPTH_EXCEEDED);
+        throwIfMaxDepthExceeded(depth);
         if (stack.indexOf(value) !== -1) throw new Error('Circular reference detected in ' + path.join('.'));
         stack.push(value);
         (0, _utilsJsDefault.default).forEach(value, function each(el, key) {
@@ -3895,7 +3973,19 @@ function redactConfig(config, redactKeys) {
 class AxiosError extends Error {
     static from(error, code, config, request, response, customProps) {
         const axiosError = new AxiosError(error.message, code || error.code, config, request, response);
-        axiosError.cause = error;
+        // Match native `Error` `cause` semantics: non-enumerable. The wrapped
+        // error often carries circular internals (sockets, requests, agents), so
+        // an enumerable `cause` makes structured loggers (pino/winston) and any
+        // own-property walk throw "Converting circular structure to JSON".
+        // Regression from #6982; see #7205. `__proto__: null` mirrors the
+        // `message` descriptor below (prototype-pollution-safe descriptor).
+        Object.defineProperty(axiosError, 'cause', {
+            __proto__: null,
+            value: error,
+            writable: true,
+            enumerable: false,
+            configurable: true
+        });
         axiosError.name = error.name;
         // Preserve status from the original error if not already set from response
         if (error.status != null && axiosError.status == null) axiosError.status = error.status;
@@ -4050,17 +4140,21 @@ class AxiosHeaders {
         const setHeaders = (headers, _rewrite)=>(0, _utilsJsDefault.default).forEach(headers, (_value, _header)=>setHeader(_value, _header, _rewrite));
         if ((0, _utilsJsDefault.default).isPlainObject(header) || header instanceof this.constructor) setHeaders(header, valueOrRewrite);
         else if ((0, _utilsJsDefault.default).isString(header) && (header = header.trim()) && !isValidHeaderName(header)) setHeaders((0, _parseHeadersJsDefault.default)(header), valueOrRewrite);
-        else if ((0, _utilsJsDefault.default).isObject(header) && (0, _utilsJsDefault.default).isIterable(header)) {
-            let obj = {}, dest, key;
+        else if ((0, _utilsJsDefault.default).isObject(header) && (0, _utilsJsDefault.default).isSafeIterable(header)) {
+            let obj = Object.create(null), dest, key;
             for (const entry of header){
                 if (!(0, _utilsJsDefault.default).isArray(entry)) throw new TypeError('Object iterator must return a key-value pair');
-                obj[key = entry[0]] = (dest = obj[key]) ? (0, _utilsJsDefault.default).isArray(dest) ? [
-                    ...dest,
-                    entry[1]
-                ] : [
-                    dest,
-                    entry[1]
-                ] : entry[1];
+                key = entry[0];
+                if ((0, _utilsJsDefault.default).hasOwnProp(obj, key)) {
+                    dest = obj[key];
+                    obj[key] = (0, _utilsJsDefault.default).isArray(dest) ? [
+                        ...dest,
+                        entry[1]
+                    ] : [
+                        dest,
+                        entry[1]
+                    ];
+                } else obj[key] = entry[1];
             }
             setHeaders(obj, valueOrRewrite);
         } else header != null && setHeader(valueOrRewrite, header, rewrite);
@@ -4607,7 +4701,8 @@ exports.default = {
     forcedJSONParsing: true,
     clarifyTimeoutError: false,
     legacyInterceptorReqResOrdering: true,
-    advertiseZstdAcceptEncoding: false
+    advertiseZstdAcceptEncoding: false,
+    validateStatusUndefinedResolves: true
 };
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9hjry":[function(require,module,exports,__globalThis) {
@@ -4741,7 +4836,14 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _utilsJs = require("../utils.js");
 var _utilsJsDefault = parcelHelpers.interopDefault(_utilsJs);
+var _axiosErrorJs = require("../core/AxiosError.js");
+var _axiosErrorJsDefault = parcelHelpers.interopDefault(_axiosErrorJs);
+var _toFormDataJs = require("./toFormData.js");
 'use strict';
+const MAX_DEPTH = (0, _toFormDataJs.DEFAULT_FORM_DATA_MAX_DEPTH);
+function throwIfDepthExceeded(index) {
+    if (index > MAX_DEPTH) throw new (0, _axiosErrorJsDefault.default)('FormData field is too deeply nested (' + index + ' levels). Max depth: ' + MAX_DEPTH, (0, _axiosErrorJsDefault.default).ERR_FORM_DATA_DEPTH_EXCEEDED);
+}
 /**
  * It takes a string like `foo[x][y][z]` and returns an array like `['foo', 'x', 'y', 'z']
  *
@@ -4753,9 +4855,14 @@ var _utilsJsDefault = parcelHelpers.interopDefault(_utilsJs);
     // foo.x.y.z
     // foo-x-y-z
     // foo x y z
-    return (0, _utilsJsDefault.default).matchAll(/\w+|\[(\w*)]/g, name).map((match)=>{
-        return match[0] === '[]' ? '' : match[1] || match[0];
-    });
+    const path = [];
+    const pattern = /\w+|\[(\w*)]/g;
+    let match;
+    while((match = pattern.exec(name)) !== null){
+        throwIfDepthExceeded(path.length);
+        path.push(match[0] === '[]' ? '' : match[1] || match[0]);
+    }
+    return path;
 }
 /**
  * Convert an array to an object.
@@ -4783,6 +4890,7 @@ var _utilsJsDefault = parcelHelpers.interopDefault(_utilsJs);
  * @returns {Object<string, any> | null} The converted object.
  */ function formDataToJSON(formData) {
     function buildPath(path, value, target, index) {
+        throwIfDepthExceeded(index);
         let name = path[index++];
         if (name === '__proto__') return true;
         const isNumericKey = Number.isFinite(+name);
@@ -4812,7 +4920,7 @@ var _utilsJsDefault = parcelHelpers.interopDefault(_utilsJs);
 }
 exports.default = formDataToJSON;
 
-},{"../utils.js":"5By4s","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"a0VmF":[function(require,module,exports,__globalThis) {
+},{"../utils.js":"5By4s","../core/AxiosError.js":"3u8Tl","./toFormData.js":"ajoez","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"a0VmF":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "default", ()=>isCancel);
@@ -4933,7 +5041,7 @@ var _axiosErrorJsDefault = parcelHelpers.interopDefault(_axiosErrorJs);
     if (!adapter) {
         const reasons = Object.entries(rejectedReasons).map(([id, state])=>`adapter ${id} ` + (state === false ? 'is not supported by the environment' : 'is not available in the build'));
         let s = length ? reasons.length > 1 ? 'since :\n' + reasons.map(renderReason).join('\n') : ' ' + renderReason(reasons[0]) : 'as no adapter specified';
-        throw new (0, _axiosErrorJsDefault.default)(`There is no suitable adapter to dispatch the request ` + s, 'ERR_NOT_SUPPORT');
+        throw new (0, _axiosErrorJsDefault.default)(`There is no suitable adapter to dispatch the request ` + s, (0, _axiosErrorJsDefault.default).ERR_NOT_SUPPORT);
     }
     return adapter;
 }
@@ -5098,6 +5206,7 @@ exports.default = isXHRAdapterSupported && function(config) {
         const protocol = (0, _parseProtocolJsDefault.default)(_config.url);
         if (protocol && !(0, _indexJsDefault.default).protocols.includes(protocol)) {
             reject(new (0, _axiosErrorJsDefault.default)('Unsupported protocol ' + protocol + ':', (0, _axiosErrorJsDefault.default).ERR_BAD_REQUEST, config));
+            done();
             return;
         }
         // Send the request
@@ -5265,6 +5374,8 @@ var _indexJs = require("../platform/index.js");
 var _indexJsDefault = parcelHelpers.interopDefault(_indexJs);
 var _utilsJs = require("../utils.js");
 var _utilsJsDefault = parcelHelpers.interopDefault(_utilsJs);
+var _axiosErrorJs = require("../core/AxiosError.js");
+var _axiosErrorJsDefault = parcelHelpers.interopDefault(_axiosErrorJs);
 var _isURLSameOriginJs = require("./isURLSameOrigin.js");
 var _isURLSameOriginJsDefault = parcelHelpers.interopDefault(_isURLSameOriginJs);
 var _cookiesJs = require("./cookies.js");
@@ -5286,7 +5397,7 @@ function setFormDataHeaders(headers, formHeaders, policy) {
         headers.set(formHeaders);
         return;
     }
-    Object.entries(formHeaders).forEach(([key, val])=>{
+    Object.entries(formHeaders || {}).forEach(([key, val])=>{
         if (FORM_DATA_CONTENT_HEADERS.includes(key.toLowerCase())) headers.set(key, val);
     });
 }
@@ -5313,9 +5424,17 @@ function resolveConfig(config) {
     const allowAbsoluteUrls = own('allowAbsoluteUrls');
     const url = own('url');
     newConfig.headers = headers = (0, _axiosHeadersJsDefault.default).from(headers);
-    newConfig.url = (0, _buildURLJsDefault.default)((0, _buildFullPathJsDefault.default)(baseURL, url, allowAbsoluteUrls), own('params'), own('paramsSerializer'));
+    newConfig.url = (0, _buildURLJsDefault.default)((0, _buildFullPathJsDefault.default)(baseURL, url, allowAbsoluteUrls, newConfig), own('params'), own('paramsSerializer'));
     // HTTP basic authentication
-    if (auth) headers.set('Authorization', 'Basic ' + btoa((auth.username || '') + ':' + (auth.password ? encodeUTF8(auth.password) : '')));
+    if (auth) {
+        const username = (0, _utilsJsDefault.default).getSafeProp(auth, 'username') || '';
+        const password = (0, _utilsJsDefault.default).getSafeProp(auth, 'password') || '';
+        try {
+            headers.set('Authorization', 'Basic ' + btoa(username + ':' + (password ? encodeUTF8(password) : '')));
+        } catch (e) {
+            throw (0, _axiosErrorJsDefault.default).from(e, (0, _axiosErrorJsDefault.default).ERR_BAD_OPTION_VALUE, config);
+        }
+    }
     if ((0, _utilsJsDefault.default).isFormData(data)) {
         if ((0, _indexJsDefault.default).hasStandardBrowserEnv || (0, _indexJsDefault.default).hasStandardBrowserWebWorkerEnv || (0, _utilsJsDefault.default).isReactNative(data)) headers.setContentType(undefined); // browser/web worker/RN handles it
         else if ((0, _utilsJsDefault.default).isFunction(data.getHeaders)) // Node.js FormData (like form-data package)
@@ -5339,7 +5458,7 @@ function resolveConfig(config) {
 }
 exports.default = resolveConfig;
 
-},{"../platform/index.js":"7tDev","../utils.js":"5By4s","./isURLSameOrigin.js":"lxXtv","./cookies.js":"4WJjt","../core/buildFullPath.js":"1I5TW","../core/mergeConfig.js":"b85oP","../core/AxiosHeaders.js":"cgSSx","./buildURL.js":"3bwC2","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"lxXtv":[function(require,module,exports,__globalThis) {
+},{"../platform/index.js":"7tDev","../utils.js":"5By4s","../core/AxiosError.js":"3u8Tl","./isURLSameOrigin.js":"lxXtv","./cookies.js":"4WJjt","../core/buildFullPath.js":"1I5TW","../core/mergeConfig.js":"b85oP","../core/AxiosHeaders.js":"cgSSx","./buildURL.js":"3bwC2","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"lxXtv":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _indexJs = require("../platform/index.js");
@@ -5380,7 +5499,11 @@ exports.default = (0, _indexJsDefault.default).hasStandardBrowserEnv ? {
         for(let i = 0; i < cookies.length; i++){
             const cookie = cookies[i].replace(/^\s+/, '');
             const eq = cookie.indexOf('=');
-            if (eq !== -1 && cookie.slice(0, eq) === name) return decodeURIComponent(cookie.slice(eq + 1));
+            if (eq !== -1 && cookie.slice(0, eq) === name) try {
+                return decodeURIComponent(cookie.slice(eq + 1));
+            } catch (e) {
+                return cookie.slice(eq + 1);
+            }
         }
         return null;
     },
@@ -5399,18 +5522,37 @@ exports.default = (0, _indexJsDefault.default).hasStandardBrowserEnv ? {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "default", ()=>buildFullPath);
+var _axiosErrorJs = require("./AxiosError.js");
+var _axiosErrorJsDefault = parcelHelpers.interopDefault(_axiosErrorJs);
 var _isAbsoluteURLJs = require("../helpers/isAbsoluteURL.js");
 var _isAbsoluteURLJsDefault = parcelHelpers.interopDefault(_isAbsoluteURLJs);
 var _combineURLsJs = require("../helpers/combineURLs.js");
 var _combineURLsJsDefault = parcelHelpers.interopDefault(_combineURLsJs);
 'use strict';
-function buildFullPath(baseURL, requestedURL, allowAbsoluteUrls) {
+const malformedHttpProtocol = /^https?:(?!\/\/)/i;
+const httpProtocolControlCharacters = /[\t\n\r]/g;
+function stripLeadingC0ControlOrSpace(url) {
+    let i = 0;
+    while(i < url.length && url.charCodeAt(i) <= 0x20)i++;
+    return url.slice(i);
+}
+function normalizeURLForProtocolCheck(url) {
+    return stripLeadingC0ControlOrSpace(url).replace(httpProtocolControlCharacters, '');
+}
+function assertValidHttpProtocolURL(url, config) {
+    if (typeof url === 'string' && malformedHttpProtocol.test(normalizeURLForProtocolCheck(url))) throw new (0, _axiosErrorJsDefault.default)('Invalid URL: missing "//" after protocol', (0, _axiosErrorJsDefault.default).ERR_INVALID_URL, config);
+}
+function buildFullPath(baseURL, requestedURL, allowAbsoluteUrls, config) {
+    assertValidHttpProtocolURL(requestedURL, config);
     let isRelativeUrl = !(0, _isAbsoluteURLJsDefault.default)(requestedURL);
-    if (baseURL && (isRelativeUrl || allowAbsoluteUrls === false)) return (0, _combineURLsJsDefault.default)(baseURL, requestedURL);
+    if (baseURL && (isRelativeUrl || allowAbsoluteUrls === false)) {
+        assertValidHttpProtocolURL(baseURL, config);
+        return (0, _combineURLsJsDefault.default)(baseURL, requestedURL);
+    }
     return requestedURL;
 }
 
-},{"../helpers/isAbsoluteURL.js":"jD6NM","../helpers/combineURLs.js":"brOWK","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jD6NM":[function(require,module,exports,__globalThis) {
+},{"./AxiosError.js":"3u8Tl","../helpers/isAbsoluteURL.js":"jD6NM","../helpers/combineURLs.js":"brOWK","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jD6NM":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "default", ()=>isAbsoluteURL);
@@ -5446,6 +5588,7 @@ const headersToObject = (thing)=>thing instanceof (0, _axiosHeadersJsDefault.def
     } : thing;
 function mergeConfig(config1, config2) {
     // eslint-disable-next-line no-param-reassign
+    config1 = config1 || {};
     config2 = config2 || {};
     // Use a null-prototype object so that downstream reads such as `config.auth`
     // or `config.baseURL` cannot inherit polluted values from Object.prototype.
@@ -5481,6 +5624,17 @@ function mergeConfig(config1, config2) {
     function defaultToConfig2(a, b) {
         if (!(0, _utilsJsDefault.default).isUndefined(b)) return getMergedValue(undefined, b);
         else if (!(0, _utilsJsDefault.default).isUndefined(a)) return getMergedValue(undefined, a);
+    }
+    function getMergedTransitionalOption(prop) {
+        const transitional2 = (0, _utilsJsDefault.default).hasOwnProp(config2, 'transitional') ? config2.transitional : undefined;
+        if (!(0, _utilsJsDefault.default).isUndefined(transitional2)) {
+            if ((0, _utilsJsDefault.default).isPlainObject(transitional2)) {
+                if ((0, _utilsJsDefault.default).hasOwnProp(transitional2, prop)) return transitional2[prop];
+            } else return undefined;
+        }
+        const transitional1 = (0, _utilsJsDefault.default).hasOwnProp(config1, 'transitional') ? config1.transitional : undefined;
+        if ((0, _utilsJsDefault.default).isPlainObject(transitional1) && (0, _utilsJsDefault.default).hasOwnProp(transitional1, prop)) return transitional1[prop];
+        return undefined;
     }
     // eslint-disable-next-line consistent-return
     function mergeDirectKeys(a, b, prop) {
@@ -5530,6 +5684,10 @@ function mergeConfig(config1, config2) {
         const configValue = merge(a, b, prop);
         (0, _utilsJsDefault.default).isUndefined(configValue) && merge !== mergeDirectKeys || (config[prop] = configValue);
     });
+    if ((0, _utilsJsDefault.default).hasOwnProp(config2, 'validateStatus') && (0, _utilsJsDefault.default).isUndefined(config2.validateStatus) && getMergedTransitionalOption('validateStatusUndefinedResolves') === false) {
+        if ((0, _utilsJsDefault.default).hasOwnProp(config1, 'validateStatus')) config.validateStatus = getMergedValue(undefined, config1.validateStatus);
+        else delete config.validateStatus;
+    }
     return config;
 }
 
@@ -5675,13 +5833,19 @@ const factory = (env)=>{
             composedSignal.unsubscribe();
         });
         let requestContentLength;
+        // AxiosError we raise while the request body is being streamed. Captured
+        // by identity so the catch block can surface it directly, regardless of
+        // how the runtime wraps the resulting fetch rejection (undici exposes it
+        // as `err.cause`; some browsers drop the original error entirely).
+        let pendingBodyError = null;
+        const maxBodyLengthError = ()=>new (0, _axiosErrorJsDefault.default)('Request body larger than maxBodyLength limit', (0, _axiosErrorJsDefault.default).ERR_BAD_REQUEST, config, request);
         try {
             // HTTP basic authentication
             let auth = undefined;
             const configAuth = own('auth');
             if (configAuth) {
-                const username = configAuth.username || '';
-                const password = configAuth.password || '';
+                const username = (0, _utilsJsDefault.default).getSafeProp(configAuth, 'username') || '';
+                const password = (0, _utilsJsDefault.default).getSafeProp(configAuth, 'password') || '';
                 auth = {
                     username,
                     password
@@ -5714,27 +5878,44 @@ const factory = (env)=>{
                 const estimated = (0, _estimateDataURLDecodedBytesJsDefault.default)(url);
                 if (estimated > maxContentLength) throw new (0, _axiosErrorJsDefault.default)('maxContentLength size of ' + maxContentLength + ' exceeded', (0, _axiosErrorJsDefault.default).ERR_BAD_RESPONSE, config, request);
             }
-            // Enforce maxBodyLength against the outbound request body before dispatch.
-            // Mirrors http.js behavior (ERR_BAD_REQUEST / 'Request body larger than
-            // maxBodyLength limit'). Skip when the body length cannot be determined
-            // (e.g. a live ReadableStream supplied by the caller).
+            // Enforce maxBodyLength against known-size bodies before dispatch using
+            // the body's *actual* size — never a caller-declared Content-Length,
+            // which could under-report to slip an oversized body past the check.
+            // Unknown-size streams return undefined here and are counted per-chunk
+            // below as fetch consumes them.
             if (hasMaxBodyLength && method !== 'get' && method !== 'head') {
-                const outboundLength = await resolveBodyLength(headers, data);
-                if (typeof outboundLength === 'number' && isFinite(outboundLength) && outboundLength > maxBodyLength) throw new (0, _axiosErrorJsDefault.default)('Request body larger than maxBodyLength limit', (0, _axiosErrorJsDefault.default).ERR_BAD_REQUEST, config, request);
-            }
-            if (onUploadProgress && supportsRequestStream && method !== 'get' && method !== 'head' && (requestContentLength = await resolveBodyLength(headers, data)) !== 0) {
-                let _request = new Request(url, {
-                    method: 'POST',
-                    body: data,
-                    duplex: 'half'
-                });
-                let contentTypeHeader;
-                if ((0, _utilsJsDefault.default).isFormData(data) && (contentTypeHeader = _request.headers.get('content-type'))) headers.setContentType(contentTypeHeader);
-                if (_request.body) {
-                    const [onProgress, flush] = (0, _progressEventReducerJs.progressEventDecorator)(requestContentLength, (0, _progressEventReducerJs.progressEventReducer)((0, _progressEventReducerJs.asyncDecorator)(onUploadProgress)));
-                    data = (0, _trackStreamJs.trackStream)(_request.body, DEFAULT_CHUNK_SIZE, onProgress, flush);
+                const outboundLength = await getBodyLength(data);
+                if (typeof outboundLength === 'number' && isFinite(outboundLength)) {
+                    requestContentLength = outboundLength;
+                    if (outboundLength > maxBodyLength) throw maxBodyLengthError();
                 }
             }
+            // A streamed body under maxBodyLength must be counted as fetch consumes
+            // it; its size is never trusted from a caller-declared Content-Length.
+            const mustEnforceStreamBody = hasMaxBodyLength && ((0, _utilsJsDefault.default).isReadableStream(data) || (0, _utilsJsDefault.default).isStream(data));
+            const trackRequestStream = (stream, onProgress, flush)=>(0, _trackStreamJs.trackStream)(stream, DEFAULT_CHUNK_SIZE, (loadedBytes)=>{
+                    if (hasMaxBodyLength && loadedBytes > maxBodyLength) throw pendingBodyError = maxBodyLengthError();
+                    onProgress && onProgress(loadedBytes);
+                }, flush);
+            if (supportsRequestStream && method !== 'get' && method !== 'head' && (onUploadProgress || mustEnforceStreamBody)) {
+                requestContentLength = requestContentLength == null ? await resolveBodyLength(headers, data) : requestContentLength;
+                // A declared length of 0 is only trusted to skip the wrap when we are
+                // not enforcing a stream limit (which must not rely on that header).
+                if (requestContentLength !== 0 || mustEnforceStreamBody) {
+                    let _request = new Request(url, {
+                        method: 'POST',
+                        body: data,
+                        duplex: 'half'
+                    });
+                    let contentTypeHeader;
+                    if ((0, _utilsJsDefault.default).isFormData(data) && (contentTypeHeader = _request.headers.get('content-type'))) headers.setContentType(contentTypeHeader);
+                    if (_request.body) {
+                        const [onProgress, flush] = onUploadProgress && (0, _progressEventReducerJs.progressEventDecorator)(requestContentLength, (0, _progressEventReducerJs.progressEventReducer)((0, _progressEventReducerJs.asyncDecorator)(onUploadProgress))) || [];
+                        data = trackRequestStream(_request.body, onProgress, flush);
+                    }
+                }
+            } else if (mustEnforceStreamBody && !isRequestSupported && isReadableStreamSupported && method !== 'get' && method !== 'head') data = trackRequestStream(data);
+            else if (mustEnforceStreamBody && isRequestSupported && !supportsRequestStream && method !== 'get' && method !== 'head') throw new (0, _axiosErrorJsDefault.default)('Stream request bodies are not supported by the current fetch implementation', (0, _axiosErrorJsDefault.default).ERR_NOT_SUPPORT, config, request);
             if (!(0, _utilsJsDefault.default).isString(withCredentials)) withCredentials = withCredentials ? 'include' : 'omit';
             // Cloudflare Workers throws when credentials are defined
             // see https://github.com/cloudflare/workerd/issues/902
@@ -5758,10 +5939,11 @@ const factory = (env)=>{
             };
             request = isRequestSupported && new Request(url, resolvedOptions);
             let response = await (isRequestSupported ? _fetch(request, fetchOptions) : _fetch(url, resolvedOptions));
+            const responseHeaders = (0, _axiosHeadersJsDefault.default).from(response.headers);
             // Cheap pre-check: if the server honestly declares a content-length that
             // already exceeds the cap, reject before we start streaming.
             if (hasMaxContentLength) {
-                const declaredLength = (0, _utilsJsDefault.default).toFiniteNumber(response.headers.get('content-length'));
+                const declaredLength = (0, _utilsJsDefault.default).toFiniteNumber(responseHeaders.getContentLength());
                 if (declaredLength != null && declaredLength > maxContentLength) throw new (0, _axiosErrorJsDefault.default)('maxContentLength size of ' + maxContentLength + ' exceeded', (0, _axiosErrorJsDefault.default).ERR_BAD_RESPONSE, config, request);
             }
             const isStreamResponse = supportsResponseStream && (responseType === 'stream' || responseType === 'response');
@@ -5774,7 +5956,7 @@ const factory = (env)=>{
                 ].forEach((prop)=>{
                     options[prop] = response[prop];
                 });
-                const responseContentLength = (0, _utilsJsDefault.default).toFiniteNumber(response.headers.get('content-length'));
+                const responseContentLength = (0, _utilsJsDefault.default).toFiniteNumber(responseHeaders.getContentLength());
                 const [onProgress, flush] = onDownloadProgress && (0, _progressEventReducerJs.progressEventDecorator)(responseContentLength, (0, _progressEventReducerJs.progressEventReducer)((0, _progressEventReducerJs.asyncDecorator)(onDownloadProgress), true)) || [];
                 let bytesRead = 0;
                 const onChunkProgress = (loadedBytes)=>{
@@ -5823,12 +6005,45 @@ const factory = (env)=>{
                 const canceledError = composedSignal.reason;
                 canceledError.config = config;
                 request && (canceledError.request = request);
-                err !== canceledError && (canceledError.cause = err);
+                if (err !== canceledError) // Non-enumerable to match native Error `cause` semantics so loggers
+                // don't recurse into circular fetch internals (see #7205).
+                Object.defineProperty(canceledError, 'cause', {
+                    __proto__: null,
+                    value: err,
+                    writable: true,
+                    enumerable: false,
+                    configurable: true
+                });
                 throw canceledError;
             }
-            if (err && err.name === 'TypeError' && /Load failed|fetch/i.test(err.message)) throw Object.assign(new (0, _axiosErrorJsDefault.default)('Network Error', (0, _axiosErrorJsDefault.default).ERR_NETWORK, config, request, err && err.response), {
-                cause: err.cause || err
-            });
+            // Surface a maxBodyLength violation we raised while the request body was
+            // being streamed. Matching by identity (rather than reading
+            // `err.cause.isAxiosError`) keeps the error deterministic across runtimes
+            // and avoids both prototype-pollution reads and mis-attributing a foreign
+            // AxiosError that merely happened to land in `err.cause`.
+            if (pendingBodyError) {
+                request && !pendingBodyError.request && (pendingBodyError.request = request);
+                throw pendingBodyError;
+            }
+            // Re-throw AxiosErrors we raised synchronously (data: URL / content-length
+            // pre-checks, response size enforcement) without re-wrapping them.
+            if (err instanceof (0, _axiosErrorJsDefault.default)) {
+                request && !err.request && (err.request = request);
+                throw err;
+            }
+            if (err && err.name === 'TypeError' && /Load failed|fetch/i.test(err.message)) {
+                const networkError = new (0, _axiosErrorJsDefault.default)('Network Error', (0, _axiosErrorJsDefault.default).ERR_NETWORK, config, request, err && err.response);
+                // Non-enumerable to match native Error `cause` semantics so loggers
+                // don't recurse into circular fetch internals (see #7205).
+                Object.defineProperty(networkError, 'cause', {
+                    __proto__: null,
+                    value: err.cause || err,
+                    writable: true,
+                    enumerable: false,
+                    configurable: true
+                });
+                throw networkError;
+            }
             throw (0, _axiosErrorJsDefault.default).from(err, err && err.code, config, request, err && err.response);
         }
     };
@@ -5889,7 +6104,9 @@ const composeSignals = (signals, timeout)=>{
         });
         signals = null;
     };
-    signals.forEach((signal)=>signal.addEventListener('abort', onabort));
+    signals.forEach((signal)=>signal.addEventListener('abort', onabort, {
+            once: true
+        }));
     const { signal } = controller;
     signal.unsubscribe = ()=>(0, _utilsJsDefault.default).asap(unsubscribe);
     return signal;
@@ -5979,14 +6196,15 @@ const trackStream = (stream, chunkSize, onProgress, onFinish)=>{
  * Estimate decoded byte length of a data:// URL *without* allocating large buffers.
  * - For base64: compute exact decoded size using length and padding;
  *               handle %XX at the character-count level (no string allocation).
- * - For non-base64: use UTF-8 byteLength of the encoded body as a safe upper bound.
+ * - For non-base64: compute the exact percent-decoded UTF-8 byte length.
  *
  * @param {string} url
  * @returns {number}
  */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "default", ()=>estimateDataURLDecodedBytes);
-var Buffer = require("620f4bc93a83451b").Buffer;
+const isHexDigit = (charCode)=>charCode >= 48 && charCode <= 57 || charCode >= 65 && charCode <= 70 || charCode >= 97 && charCode <= 102;
+const isPercentEncodedByte = (str, i, len)=>i + 2 < len && isHexDigit(str.charCodeAt(i + 1)) && isHexDigit(str.charCodeAt(i + 2));
 function estimateDataURLDecodedBytes(url) {
     if (!url || typeof url !== 'string') return 0;
     if (!url.startsWith('data:')) return 0;
@@ -6001,7 +6219,7 @@ function estimateDataURLDecodedBytes(url) {
         for(let i = 0; i < len; i++)if (body.charCodeAt(i) === 37 /* '%' */  && i + 2 < len) {
             const a = body.charCodeAt(i + 1);
             const b = body.charCodeAt(i + 2);
-            const isHex = (a >= 48 && a <= 57 || a >= 65 && a <= 70 || a >= 97 && a <= 102) && (b >= 48 && b <= 57 || b >= 65 && b <= 70 || b >= 97 && b <= 102);
+            const isHex = isHexDigit(a) && isHexDigit(b);
             if (isHex) {
                 effectiveLen -= 2;
                 i += 2;
@@ -6029,15 +6247,17 @@ function estimateDataURLDecodedBytes(url) {
         const bytes = groups * 3 - (pad || 0);
         return bytes > 0 ? bytes : 0;
     }
-    if (typeof Buffer !== 'undefined' && typeof Buffer.byteLength === 'function') return Buffer.byteLength(body, 'utf8');
     // Compute UTF-8 byte length directly from UTF-16 code units without allocating
     // a byte buffer (TextEncoder.encode would defeat the DoS guard on large bodies).
-    // Using body.length here would undercount non-ASCII (e.g. '€' is 1 code unit
-    // but 3 UTF-8 bytes).
+    // Valid %XX triplets count as one decoded byte; this matches the bytes that
+    // decodeURIComponent(body) would produce before Buffer re-encodes the string.
     let bytes = 0;
     for(let i = 0, len = body.length; i < len; i++){
         const c = body.charCodeAt(i);
-        if (c < 0x80) bytes += 1;
+        if (c === 37 /* '%' */  && isPercentEncodedByte(body, i, len)) {
+            bytes += 1;
+            i += 2;
+        } else if (c < 0x80) bytes += 1;
         else if (c < 0x800) bytes += 2;
         else if (c >= 0xd800 && c <= 0xdbff && i + 1 < len) {
             const next = body.charCodeAt(i + 1);
@@ -6050,11 +6270,11 @@ function estimateDataURLDecodedBytes(url) {
     return bytes;
 }
 
-},{"620f4bc93a83451b":"fCgem","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"h29L9":[function(require,module,exports,__globalThis) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"h29L9":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "VERSION", ()=>VERSION);
-const VERSION = "1.17.0";
+const VERSION = "1.18.1";
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9vgkY":[function(require,module,exports,__globalThis) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -6117,7 +6337,7 @@ validators.spelling = function spelling(correctSpelling) {
  *
  * @returns {object}
  */ function assertOptions(options, schema, allowUnknown) {
-    if (typeof options !== 'object') throw new (0, _axiosErrorJsDefault.default)('options must be an object', (0, _axiosErrorJsDefault.default).ERR_BAD_OPTION_VALUE);
+    if (typeof options !== 'object' || options === null) throw new (0, _axiosErrorJsDefault.default)('options must be an object', (0, _axiosErrorJsDefault.default).ERR_BAD_OPTION_VALUE);
     const keys = Object.keys(options);
     let i = keys.length;
     while(i-- > 0){
@@ -6450,7 +6670,7 @@ const createReview = async (tourId, review, rating)=>{
             }, 1500);
         }
     } catch (error) {
-        (0, _alert.showAlert)('error', 'Error login! Try again.');
+        (0, _alert.showAlert)('error', err.response.data.message);
     }
 };
 

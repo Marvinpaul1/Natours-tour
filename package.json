@@ -39,6 +39,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.5",
+    "parcel": "^2.16.4",
     "paystack-api": "^2.0.6",
     "prettier": "^3.8.1",
     "pug": "^3.0.4",
@@ -52,7 +53,6 @@
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",
     "events": "^3.3.0",
-    "nodemon": "^3.1.14",
-    "parcel": "^2.16.4"
+    "nodemon": "^3.1.14"
   }
 }

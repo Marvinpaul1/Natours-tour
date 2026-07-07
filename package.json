@@ -15,10 +15,12 @@
   "dependencies": {
     "axios": "^1.17.0",
     "bcryptjs": "^3.0.3",
+    "buffer": "^6.0.3",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "core-js": "^3.49.0",
     "cross-env": "^10.1.0",
+    "crypto-browserify": "^3.12.1",
     "dotenv": "^17.3.1",
     "eslint": "^8.57.1",
     "eslint-config-airbnb": "^19.0.4",
@@ -28,6 +30,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "^7.37.5",
+    "events": "^3.3.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.0",
     "helmet": "^8.1.0",
@@ -50,9 +53,9 @@
     "xss": "^1.0.15"
   },
   "devDependencies": {
-    "buffer": "^6.0.3",
-    "crypto-browserify": "^3.12.1",
-    "events": "^3.3.0",
     "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
